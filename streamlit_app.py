@@ -11,12 +11,16 @@ st.title("📰 AG News Headline Classifier")
 @st.cache_resource
 def load_model():
     try:
-        # Force CPU loading even if model was trained on GPU
-        device = torch.device('cpu')
-        model_data = load('ag_news_model.pkl', map_location=device)
+        # Load with joblib first
+        model_data = load('ag_news_model.pkl')
         
-        model = model_data['model'].to(device)
+        # Get model and tokenizer
+        model = model_data['model']
         tokenizer = model_data['tokenizer']
+        
+        # Move model to CPU if it's on GPU
+        if next(model.parameters()).is_cuda:
+            model = model.to('cpu')
         
         st.success("✅ Model loaded successfully!")
         return model, tokenizer
