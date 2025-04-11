@@ -17,17 +17,26 @@ CLASS_LABELS = {
 
 @st.cache_resource
 def load_model():
-    """Load the model and tokenizer with safety checks"""
     try:
         device = torch.device('cpu')
         
-        # Load with explicit safety allowance for transformers
-        with torch.serialization.safe_globals():
-            model_data = torch.load('ag_news_model.pt', 
-                                  map_location=device,
-                                  weights_only=False)
+        # Create safe globals context including the tokenizer class
+        from transformers.models.bert.tokenization_bert_fast import BertTokenizerFast
+        safe_list = [BertTokenizerFast]
         
-        # Initialize model architecture
+        # Method 1: Using add_safe_globals (preferred)
+        torch.serialization.add_safe_globals(safe_list)
+        model_data = torch.load('ag_news_model.pt', 
+                              map_location=device,
+                              weights_only=True)
+        
+        # Method 2: Alternative using context manager
+        # with torch.serialization.safe_globals(safe_list):
+        #     model_data = torch.load('ag_news_model.pt', 
+        #                           map_location=device,
+        #                           weights_only=True)
+        
+        # Recreate model architecture
         model = AutoModelForSequenceClassification.from_pretrained(
             "google/bert_uncased_L-2_H-128_A-2",
             num_labels=4
@@ -36,6 +45,7 @@ def load_model():
         model.to(device).eval()
         
         tokenizer = model_data['tokenizer']
+        st.success("✅ Model loaded successfully!")
         return model, tokenizer
         
     except Exception as e:
