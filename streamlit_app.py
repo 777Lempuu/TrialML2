@@ -11,17 +11,18 @@ st.title("📰 AG News Headline Classifier")
 @st.cache_resource
 def load_model():
     try:
-        # Load with joblib first
-        model_data = load('ag_news_model.pkl')
+        device = torch.device('cpu')
+        model_data = torch.load('ag_news_model.pt', map_location=device)
         
-        # Get model and tokenizer
-        model = model_data['model']
+        # Recreate model architecture
+        model = AutoModelForSequenceClassification.from_pretrained(
+            "google/bert_uncased_L-2_H-128_A-2",
+            num_labels=4
+        )
+        model.load_state_dict(model_data['model_state_dict'])
+        model.to(device)
+        
         tokenizer = model_data['tokenizer']
-        
-        # Move model to CPU if it's on GPU
-        if next(model.parameters()).is_cuda:
-            model = model.to('cpu')
-        
         st.success("✅ Model loaded successfully!")
         return model, tokenizer
     except Exception as e:
