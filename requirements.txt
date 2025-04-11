@@ -4,3 +4,5 @@ transformers
 numpy
 pandas
 matplotlib
+joblib
+nltk
