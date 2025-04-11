@@ -12,8 +12,13 @@ st.title("📰 AG News Headline Classifier")
 def load_model():
     try:
         device = torch.device('cpu')
-        model_data = torch.load('ag_news_model.pt', map_location=device)
         
+        # Use context manager to allow the tokenizer class
+        with torch.serialization.safe_globals([type(AutoTokenizer.from_pretrained("google/bert_uncased_L-2_H-128_A-2"))]):
+            model_data = torch.load('ag_news_model.pt', 
+                                  map_location=device,
+                                  weights_only=False)  # Required for custom classes
+            
         # Recreate model architecture
         model = AutoModelForSequenceClassification.from_pretrained(
             "google/bert_uncased_L-2_H-128_A-2",
