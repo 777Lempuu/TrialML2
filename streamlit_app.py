@@ -14,7 +14,3 @@ st.write("### AG News Dataset (Train Split)")
 st.write("Showing a preview of the data:")
 num_rows = st.slider("Number of rows to display", 5, 100, 10)
 st.dataframe(df.head(num_rows))
-        for i, prob in enumerate(probs.squeeze()):
-            st.write(f"{class_labels[i]}: {prob:.2%}")
-    else:
-        st.warning("Please enter some text to classify.")
