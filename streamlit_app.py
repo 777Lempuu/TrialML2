@@ -4,7 +4,7 @@ import torch
 from joblib import load
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-st.set_page_config(page_title="AG News Classifier", layout="wide")
+st.set_page_config(page_title="AG News Classifier [ReFixMatch method]", layout="wide")
 st.title("📰 AG News Headline Classifier")
 
 # Load model and tokenizer
