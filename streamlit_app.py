@@ -26,7 +26,7 @@ def load_model():
         torch.serialization.add_safe_globals([BertTokenizerFast, Tokenizer])
         
         # Load with weights_only=False since we've added safe globals
-        model_data = torch.load('ag_news_model.pt', 
+        model_data = torch.load('ag_news_model.pth', 
                              map_location=device,
                              weights_only=False)  # Now safe because we've allowlisted classes
         
