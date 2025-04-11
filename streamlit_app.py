@@ -1,12 +1,10 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
 
-# Set up the page
 st.set_page_config(page_title="AG News Classifier", layout="wide")
-st.title("📰 AG News Dataset Viewer & Predictor")
+st.title("📰 AG News Headline Classifier")
 
-# Load the dataset
+# Load and preview the dataset
 @st.cache_data
 def load_agnews_csv():
     url = "https://drive.google.com/uc?id=1xr-eyagU6GeZlYpn8qGIuMSdK5WFUV5x"
@@ -15,62 +13,32 @@ def load_agnews_csv():
 df = load_agnews_csv()
 df.dropna(inplace=True)
 
-
-# Data preview
-st.subheader("📄 Dataset Preview")
+st.subheader("📄 Preview the Dataset")
 num_rows = st.slider("Select number of rows to display", 5, 100, 10)
 st.dataframe(df.head(num_rows))
-
-# Visualization
-st.subheader("📊 Class Distribution")
-fig, ax = plt.subplots()
-df['Category'].value_counts().plot(kind='bar', color='lightgreen', ax=ax)
-ax.set_xlabel("Category")
-ax.set_ylabel("Number of Articles")
-ax.set_title("Distribution of News Categories")
-st.pyplot(fig)
 
 # Divider
 st.markdown("---")
 
-# User Input Section
+# User Input Interface for Prediction
 st.subheader("🤖 Try It Yourself: Headline Classification")
-headline = st.text_input("Enter a news headline or short snippet for prediction:")
 
-# Optional user guess
+headline = st.text_input("Enter a news headline or snippet:")
+
 user_guess = st.radio(
-    "What do you think the category is?",
+    "What category do you think it belongs to?",
     ["Select", "World", "Sports", "Business", "Sci/Tech"],
     index=0
 )
 
-# Optional confidence
-confidence = st.slider("How confident are you in your guess?", 1, 5, 3)
+user_confidence = st.slider("How confident are you in your guess?", 1, 5, 3)
 
-# Placeholder prediction section
+# Placeholder for future model prediction
 if headline:
     st.write("### 🔍 Prediction Result:")
-    
-    # When you load your ReFixMatch model later, replace the following:
-    # ---- Dummy Example (Replace this with real model prediction) ----
-    predicted_label = "Business"
-    prediction_confidence = {
-        "World": 0.05,
-        "Sports": 0.10,
-        "Business": 0.70,
-        "Sci/Tech": 0.15
-    }
-    # ------------------------------------------------------------------
+    st.info("Model prediction will be shown here once connected.")
 
-    st.success(f"Predicted Category: **{predicted_label}**")
-    
-    # Confidence bar chart
-    st.write("Model Confidence:")
-    st.bar_chart(pd.Series(prediction_confidence))
-
-    # Feedback to user
+    # Optional feedback if user made a guess
     if user_guess != "Select":
-        if user_guess == predicted_label:
-            st.info("✅ Your guess matched the model!")
-        else:
-            st.warning(f"❌ Your guess was **{user_guess}**, but the model predicted **{predicted_label}**.")
+        st.write(f"Your guess: **{user_guess}** with confidence level **{user_confidence}/5**")
+
