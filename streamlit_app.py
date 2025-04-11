@@ -15,9 +15,6 @@ def load_agnews_csv():
 df = load_agnews_csv()
 df.dropna(inplace=True)
 
-# Optional mapping from class index to readable labels
-label_map = {1: "World", 2: "Sports", 3: "Business", 4: "Sci/Tech"}
-df['Category'] = df['Class Index'].map(label_map)
 
 # Data preview
 st.subheader("📄 Dataset Preview")
