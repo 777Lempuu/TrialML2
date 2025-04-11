@@ -1,53 +1,55 @@
 import streamlit as st
 import pandas as pd
 import torch
-from joblib import load
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-st.set_page_config(page_title="AG News Classifier [ReFixMatch method]", layout="wide")
+# Configure page
+st.set_page_config(page_title="AG News Classifier", layout="wide")
 st.title("📰 AG News Headline Classifier")
 
-# Load model and tokenizer
-@st.cache_resource
-def load_model():
-    try:
-        device = torch.device('cpu')
-        
-        # Use context manager to allow the tokenizer class
-        with torch.serialization.safe_globals([type(AutoTokenizer.from_pretrained("google/bert_uncased_L-2_H-128_A-2"))]):
-            model_data = torch.load('ag_news_model.pt', 
-                                  map_location=device,
-                                  weights_only=False)  # Required for custom classes
-            
-        # Recreate model architecture
-        model = AutoModelForSequenceClassification.from_pretrained(
-            "google/bert_uncased_L-2_H-128_A-2",
-            num_labels=4
-        )
-        model.load_state_dict(model_data['model_state_dict'])
-        model.to(device)
-        
-        tokenizer = model_data['tokenizer']
-        st.success("✅ Model loaded successfully!")
-        return model, tokenizer
-    except Exception as e:
-        st.error(f"❌ Error loading model: {str(e)}")
-        return None, None
-
-model, tokenizer = load_model()
-if model:
-    model.eval()  # Set to evaluation mode
-
 # Class labels mapping
-class_labels = {
+CLASS_LABELS = {
     0: "World",
     1: "Sports",
     2: "Business",
     3: "Sci/Tech"
 }
 
-# Prediction function
+@st.cache_resource
+def load_model():
+    """Load the model and tokenizer with safety checks"""
+    try:
+        device = torch.device('cpu')
+        
+        # Load with explicit safety allowance for transformers
+        with torch.serialization.safe_globals():
+            model_data = torch.load('ag_news_model.pt', 
+                                  map_location=device,
+                                  weights_only=False)
+        
+        # Initialize model architecture
+        model = AutoModelForSequenceClassification.from_pretrained(
+            "google/bert_uncased_L-2_H-128_A-2",
+            num_labels=4
+        )
+        model.load_state_dict(model_data['model_state_dict'])
+        model.to(device).eval()
+        
+        tokenizer = model_data['tokenizer']
+        return model, tokenizer
+        
+    except Exception as e:
+        st.error(f"❌ Model loading failed: {str(e)}")
+        return None, None
+
+# Load model
+model, tokenizer = load_model()
+
 def predict(text):
+    """Make prediction with proper error handling"""
+    if not model or not tokenizer:
+        return None, None
+        
     try:
         inputs = tokenizer(
             text,
@@ -61,28 +63,47 @@ def predict(text):
         probs = torch.nn.functional.softmax(outputs, dim=1)
         pred_class = torch.argmax(probs).item()
         confidence = torch.max(probs).item()
-        return class_labels[pred_class], confidence
+        return CLASS_LABELS[pred_class], confidence
     except Exception as e:
         st.error(f"Prediction error: {str(e)}")
         return None, None
 
-# [Keep your existing dataset loading code...]
+# --- UI Components ---
 
-# User Input Interface for Prediction
-st.subheader("🤖 Try It Yourself: Headline Classification")
+# Dataset preview (optional)
+@st.cache_data
+def load_sample_data():
+    url = "https://drive.google.com/uc?id=1xr-eyagU6GeZlYpn8qGIuMSdK5WFUV5x"
+    return pd.read_csv(url).dropna()
 
-headline = st.text_input("Enter a news headline or snippet:")
+if st.checkbox("Show sample dataset"):
+    df = load_sample_data()
+    num_rows = st.slider("Rows to display", 5, 100, 10)
+    st.dataframe(df.head(num_rows))
 
-if headline and model:  # Only show if we have both input and model
-    st.write("### 🔍 Prediction Result:")
-    
-    # Get model prediction
-    pred_class, confidence = predict(headline)
-    
-    if pred_class:  # Only show if prediction succeeded
-        # Display prediction
-        col1, col2 = st.columns(2)
-        with col1:
-            st.metric("Predicted Category", pred_class)
-        with col2:
-            st.metric("Confidence", f"{confidence:.1%}")
+# Main prediction interface
+st.subheader("🔮 News Classifier")
+user_input = st.text_area("Enter news text:", height=150)
+
+if st.button("Predict") and user_input:
+    with st.spinner("Analyzing..."):
+        category, confidence = predict(user_input)
+        
+    if category:
+        st.success(f"Predicted Category: **{category}**")
+        st.metric("Confidence", f"{confidence:.1%}")
+        
+        # Optional: Show explanation
+        with st.expander("What does this mean?"):
+            st.markdown(f"""
+            The model believes this text belongs to **{category}** news with {confidence:.1%} confidence.
+            
+            * 0: World 🌍
+            * 1: Sports ⚽
+            * 2: Business 💼  
+            * 3: Sci/Tech 🔬
+            """)
+
+# Footer
+st.markdown("---")
+st.caption("Built with 🤗 Transformers and Streamlit")
