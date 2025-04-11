@@ -11,9 +11,13 @@ st.title("📰 AG News Headline Classifier")
 @st.cache_resource
 def load_model():
     try:
-        model_data = load('ag_news_model.pkl')
-        model = model_data['model']
+        # Force CPU loading even if model was trained on GPU
+        device = torch.device('cpu')
+        model_data = load('ag_news_model.pkl', map_location=device)
+        
+        model = model_data['model'].to(device)
         tokenizer = model_data['tokenizer']
+        
         st.success("✅ Model loaded successfully!")
         return model, tokenizer
     except Exception as e:
